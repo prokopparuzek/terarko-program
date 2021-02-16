@@ -43,7 +43,8 @@ type DHT11Msg struct {
 }
 
 const (
-	logFile = "/var/log/measures-terarko.log"
+	//logFile = "/var/log/measures-terarko.log"
+	logFile = "log"
 	csvFile = "/home/pi/data/terarko.csv"
 	subjectPrefix = "terarko"
 	MAXTRY = 3
@@ -118,7 +119,11 @@ func getMeasure() (out [3]measure){
 	for i := 0; i < MAXTRY; i++ {
 		e, err = getBME280()
 		if err != nil {
-			logger.Error(err, "will retry")
+			logger.Error(err, " :will retry")
+			continue
+		} else {
+			logger.Debug("Read succesfully")
+			break
 		}
 	}
 	if err != nil {
@@ -131,7 +136,11 @@ func getMeasure() (out [3]measure){
 	for i := 0; i < MAXTRY; i++ {
 		e, err = getDS18B20()
 		if err != nil {
-			logger.Error(err, "will retry")
+			logger.Error(err, " :will retry")
+			continue
+		} else {
+			logger.Debug("Read succesfully")
+			break
 		}
 	}
 	if err != nil {
@@ -144,7 +153,11 @@ func getMeasure() (out [3]measure){
 	for i := 0; i < MAXTRY; i++ {
 		e, err = getDHT11()
 		if err != nil {
-			logger.Error(err, "will retry")
+			logger.Error(err, " :will retry")
+			continue
+		} else {
+			logger.Debug("Read succesfully")
+			break
 		}
 	}
 	if err != nil {
@@ -182,9 +195,9 @@ func sendMeasures(_ time.Time) {
 	sense = data[BME280]
 	if sense.err == nil {
 		msgB.Timestamp = sense.timestamp.Unix()
-		msgB.Humidity = float64(sense.sense.Humidity / physic.PercentRH)
+		msgB.Humidity = float64(sense.sense.Humidity) / float64(physic.PercentRH)
 		msgB.Temperature = sense.sense.Temperature.Celsius()
-		msgB.Pressure = float64(sense.sense.Pressure / physic.Pascal)
+		msgB.Pressure = float64(sense.sense.Pressure) / float64(physic.Pascal)
 		Jmsg, err := json.Marshal(msgB)
 		logger := log.WithField("message", "BME280" + string(Jmsg))
 		if err == nil {
@@ -213,6 +226,7 @@ func sendMeasures(_ time.Time) {
 	if sense.err == nil {
 		msgT.Timestamp = sense.timestamp.Unix()
 		msgT.Temperature = sense.sense.Temperature.Celsius()
+		msgT.Humidity = float64(sense.sense.Humidity) / float64(physic.PercentRH)
 		Jmsg, err := json.Marshal(msgT)
 		logger := log.WithField("message", "DHT11" + string(Jmsg))
 		if err == nil {
@@ -228,16 +242,14 @@ func main() {
 	// logrus
 	log.SetOutput(os.Stderr)
 	log.SetReportCaller(true)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 	log.SetFormatter(&log.JSONFormatter{})
-	/*
 	f, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
 	if err != nil {
 		log.WithField("file", logFile).Error(err)
 	} else {
 		log.SetOutput(f)
 	}
-	*/
 	forever := make(chan bool)
 	for {
 		scon, err = stan.Connect("measures", "rpi2", stan.NatsURL("nats://rpi3:4222"), stan.Pings(60, 1440))
@@ -256,13 +268,11 @@ func main() {
 		log.Fatal(err)
 	}
 	// Cron
-	/*
 	cron.NewCronJob(cron.ANY, cron.ANY, cron.ANY, cron.ANY, 00, 10, sendMeasures)
 	cron.NewCronJob(cron.ANY, cron.ANY, cron.ANY, cron.ANY, 15, 10, sendMeasures)
 	cron.NewCronJob(cron.ANY, cron.ANY, cron.ANY, cron.ANY, 30, 10, sendMeasures)
 	cron.NewCronJob(cron.ANY, cron.ANY, cron.ANY, cron.ANY, 45, 10, sendMeasures)
-	*/
-	cron.NewCronJob(cron.ANY, cron.ANY, cron.ANY, cron.ANY, cron.ANY, 10, sendMeasures)
+	//cron.NewCronJob(cron.ANY, cron.ANY, cron.ANY, cron.ANY, cron.ANY, 10, sendMeasures)
 	log.Debug("Set CRON")
 	<-forever
 }

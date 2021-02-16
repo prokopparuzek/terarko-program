@@ -1,0 +1,4 @@
+*.swp
+*.swo
+go.sum
+measure
