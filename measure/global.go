@@ -48,7 +48,7 @@ const (
 	DHT11
 )
 
-var sensors []string = []string{"BME280", "DSDS18B20", "DHT11"}
+var sensors []string = []string{"BME280", "DS18B20", "DHT11"}
 
 var (
 	scon stan.Conn
