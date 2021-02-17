@@ -60,7 +60,7 @@ func sendMeasures(_ time.Time) {
 		Jmsg, err := json.Marshal(msgD)
 		logger := log.WithField("message", "DS18B20" + string(Jmsg))
 		if err == nil {
-			toCsv[DS18B20] = []string{fmt.Sprint(msgB.Timestamp), fmt.Sprint(msgB.Temperature)}
+			toCsv[DS18B20] = []string{fmt.Sprint(msgD.Timestamp), fmt.Sprint(msgD.Temperature)}
 			go sendMsg(Jmsg, "DS18B20", logger)
 		} else {
 			logger.Error(err)
@@ -76,7 +76,7 @@ func sendMeasures(_ time.Time) {
 		Jmsg, err := json.Marshal(msgT)
 		logger := log.WithField("message", "DHT11" + string(Jmsg))
 		if err == nil {
-			toCsv[DHT11] = []string{fmt.Sprint(msgB.Timestamp), fmt.Sprint(msgB.Temperature), fmt.Sprint(msgB.Humidity)}
+			toCsv[DHT11] = []string{fmt.Sprint(msgT.Timestamp), fmt.Sprint(msgT.Temperature), fmt.Sprint(msgT.Humidity)}
 			go sendMsg(Jmsg, "DHT11", logger)
 		} else {
 			logger.Error(err)
