@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"periph.io/x/conn/v3/physic"
-	"periph.io/x/conn/v3/i2c/i2creg"
-	"periph.io/x/devices/v3/bmxx80"
 	"github.com/prokopparuzek/go-dht"
 	"github.com/yryz/ds18b20"
+	"periph.io/x/conn/v3/i2c/i2creg"
+	"periph.io/x/conn/v3/physic"
+	"periph.io/x/devices/v3/bmxx80"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -22,7 +22,6 @@ func getBME280() (e physic.Env, err error) {
 	defer b.Close()
 	dev, err := bmxx80.NewI2C(b, 0x77, &bmxx80.DefaultOpts)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	defer dev.Halt()
@@ -33,12 +32,10 @@ func getBME280() (e physic.Env, err error) {
 func getDS18B20() (e physic.Env, err error) {
 	sensors, err := ds18b20.Sensors()
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	t, err := ds18b20.Temperature(sensors[0])
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	e.Temperature.Set(fmt.Sprintf("%fC", t))
@@ -53,7 +50,6 @@ func getDHT11() (e physic.Env, err error) {
 	}
 	h, t, err := dht.ReadRetry(10)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	e.Temperature.Set(fmt.Sprintf("%fC", t))
@@ -61,11 +57,11 @@ func getDHT11() (e physic.Env, err error) {
 	return
 }
 
-func getMeasure() (out [SENSORSCOUNT]measure){
+func getMeasure() (out [SENSORSCOUNT]measure) {
 	var e physic.Env
 	var err error
 	var logger *log.Entry
-	var functions [SENSORSCOUNT]func()(physic.Env, error)
+	var functions [SENSORSCOUNT]func() (physic.Env, error)
 
 	functions[BME280] = getBME280
 	functions[DS18B20] = getDS18B20
@@ -76,7 +72,7 @@ func getMeasure() (out [SENSORSCOUNT]measure){
 		for j := 0; j < MAXTRY; j++ {
 			e, err = functions[i]()
 			if err != nil {
-				logger.Error(err, " :will retry")
+				logger.Error(err)
 				continue
 			} else {
 				logger.Debug("Read succesfully")
@@ -84,7 +80,7 @@ func getMeasure() (out [SENSORSCOUNT]measure){
 			}
 		}
 		if err != nil {
-			logger.Error(err)
+			logger.Error("Too many errors")
 		}
 		logger.Debug(e)
 		out[i] = measure{e, err, time.Now()}
