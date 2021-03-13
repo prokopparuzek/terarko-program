@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"periph.io/x/conn/v3/physic"
@@ -12,9 +12,10 @@ import (
 
 func sendMsg(Jmsg []byte, subjectSuffix string, logger *log.Entry) {
 	var tries int
+	var err error
 
 	for tries = 0; tries < MAX; tries++ {
-		err := scon.Publish(subjectPrefix+":"+subjectSuffix, Jmsg)
+		err = scon.Publish(subjectPrefix+":"+subjectSuffix, Jmsg)
 		if err != nil {
 			logger.Debug("Error, will retry")
 			time.Sleep(60 * time.Second)
@@ -24,10 +25,9 @@ func sendMsg(Jmsg []byte, subjectSuffix string, logger *log.Entry) {
 		}
 	}
 	if tries >= MAX {
-		logger.Error("Cannot deliver")
+		logger.Error(err, "Cannot deliver")
 	}
 }
-
 
 func sendMeasures(_ time.Time) {
 	var sense measure
@@ -43,7 +43,7 @@ func sendMeasures(_ time.Time) {
 		msgB.Temperature = sense.sense.Temperature.Celsius()
 		msgB.Pressure = float64(sense.sense.Pressure) / float64(physic.Pascal)
 		Jmsg, err := json.Marshal(msgB)
-		logger := log.WithField("message", "BME280" + string(Jmsg))
+		logger := log.WithField("message", "BME280"+string(Jmsg))
 		if err == nil {
 			toCsv[BME280] = []string{fmt.Sprint(msgB.Timestamp), fmt.Sprint(msgB.Temperature), fmt.Sprint(msgB.Humidity), fmt.Sprint(msgB.Pressure)}
 			go sendMsg(Jmsg, "BME280", logger)
@@ -58,7 +58,7 @@ func sendMeasures(_ time.Time) {
 		msgD.Timestamp = sense.timestamp.Unix()
 		msgD.Temperature = sense.sense.Temperature.Celsius()
 		Jmsg, err := json.Marshal(msgD)
-		logger := log.WithField("message", "DS18B20" + string(Jmsg))
+		logger := log.WithField("message", "DS18B20"+string(Jmsg))
 		if err == nil {
 			toCsv[DS18B20] = []string{fmt.Sprint(msgD.Timestamp), fmt.Sprint(msgD.Temperature)}
 			go sendMsg(Jmsg, "DS18B20", logger)
@@ -74,7 +74,7 @@ func sendMeasures(_ time.Time) {
 		msgT.Temperature = sense.sense.Temperature.Celsius()
 		msgT.Humidity = float64(sense.sense.Humidity) / float64(physic.PercentRH)
 		Jmsg, err := json.Marshal(msgT)
-		logger := log.WithField("message", "DHT11" + string(Jmsg))
+		logger := log.WithField("message", "DHT11"+string(Jmsg))
 		if err == nil {
 			toCsv[DHT11] = []string{fmt.Sprint(msgT.Timestamp), fmt.Sprint(msgT.Temperature), fmt.Sprint(msgT.Humidity)}
 			go sendMsg(Jmsg, "DHT11", logger)
